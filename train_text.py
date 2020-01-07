@@ -1,13 +1,15 @@
-from text_model import *
+from m3inference.text_model import *
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+import json
+from m3inference.dataset import *
 
 # 10 in the paper
 device = 'cpu'
 num_epoch = 1
 m3text = M3InferenceTextModel()
-data_or_datapath = "../test/data.jsonl"
+data_or_datapath = "test/data.jsonl"
 
 data = []
 with open(data_or_datapath) as f:
@@ -26,10 +28,12 @@ for epoch in range(num_epoch):
     for batch in tqdm(dataloader, desc='Training...'):
         batch = [i.to(device) for i in batch]
         # extract the label from batch
-        label = [i['gender'] for i in batch]
+        print(batch)
+        label = []
+        # label = [i['gender'] for i in batch]
         # pred = self.model(batch)
         output = m3text.forward(batch, 'gender')
-        print(output.item())
+        print(output)
         # y_pred.append([_pred.detach().cpu().numpy() for _pred in pred])
         loss = criterion(output, label)
         epoch_loss += loss.item()
