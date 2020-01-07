@@ -17,7 +17,7 @@ with open(data_or_datapath) as f:
         data.append(json.loads(line))
 
 # Loading dataset
-dataloader = DataLoader(M3InferenceDataset(data, use_img=False), 16,
+dataloader = DataLoader(M3InferenceDataset(data, use_img=False), 1,
                         num_workers=4, pin_memory=True)
 criterion = nn.CrossEntropyLoss()
 # learning rate 0.001 for ground-up model, 0.0005 for fine-tuning model
@@ -26,13 +26,14 @@ y_pred = []
 for epoch in range(num_epoch):
     epoch_loss = 0
     for batch in tqdm(dataloader, desc='Training...'):
-        batch = [i.to(device) for i in batch]
-        # extract the label from batch
         print(batch)
-        label = []
-        # label = [i['gender'] for i in batch]
+        # batch = [i.to(device) for i in batch]
+        data = batch['data']
+        # extract the label from batch
+        # label = [i.to(device) for i in batch['label']]
+        label = batch['label']
         # pred = self.model(batch)
-        output = m3text.forward(batch, 'gender')
+        output = m3text.forward(data, 'gender')
         print(output)
         # y_pred.append([_pred.detach().cpu().numpy() for _pred in pred])
         loss = criterion(output, label)

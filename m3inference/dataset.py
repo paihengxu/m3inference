@@ -22,11 +22,11 @@ class M3InferenceDataset(Dataset):
         for entry in data:
             entry = DotDict(entry)
             if use_img:
-                self.data.append([entry.id, entry.lang, normalize_space(str(entry.name)),
+                self.data.append([entry.gender, entry.id, entry.lang, normalize_space(str(entry.name)),
                                   normalize_space(str(entry.screen_name)),
                                   normalize_url(normalize_space(str(entry.description))), entry.img_path])
             else:
-                self.data.append([entry.id, entry.lang, normalize_space(str(entry.name)),
+                self.data.append([entry.gender, entry.id, entry.lang, normalize_space(str(entry.name)),
                                   normalize_space(str(entry.screen_name)),
                                   normalize_url(normalize_space(str(entry.description)))])
 
@@ -38,11 +38,20 @@ class M3InferenceDataset(Dataset):
 
     def _preprocess_data(self, data):
         if self.use_img:
-            _id, lang, username, screenname, des, img_path = data
+            gender, _id, lang, username, screenname, des, img_path = data
             # image
             fig = self._image_loader(img_path)
         else:
-            _id, lang, username, screenname, des = data
+            gender, _id, lang, username, screenname, des = data
+
+        # label
+        if gender == 'male':
+            gender_tensor = torch.tensor(1)
+        elif gender == 'female':
+            gender_tensor = torch.tensor(0)
+        else:
+            raise ValueError("unknown gender value {}".format(gender))
+
 
         # text
         lang_tensor = LANGS[lang]
@@ -78,11 +87,9 @@ class M3InferenceDataset(Dataset):
             des_tensor[:des_len] = [EMB.get(i, EMB[unicodedata.category(i)]) for i in des]
 
         if self.use_img:
-            return lang_tensor, torch.LongTensor(username_tensor), username_len, torch.LongTensor(
-                screenname_tensor), screenname_len, torch.LongTensor(des_tensor), des_len, fig
+            return {"data": [lang_tensor, torch.LongTensor(username_tensor), username_len, torch.LongTensor(screenname_tensor), screenname_len, torch.LongTensor(des_tensor), des_len, fig], "label": gender_tensor}
         else:
-            return lang_tensor, torch.LongTensor(username_tensor), username_len, torch.LongTensor(
-                screenname_tensor), screenname_len, torch.LongTensor(des_tensor), des_len
+            return {"data": [lang_tensor, torch.LongTensor(username_tensor), username_len, torch.LongTensor(screenname_tensor), screenname_len, torch.LongTensor(des_tensor), des_len], "label": gender_tensor}
 
     def __len__(self):
         return len(self.data)
