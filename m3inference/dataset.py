@@ -45,9 +45,9 @@ class M3InferenceDataset(Dataset):
             gender, _id, lang, username, screenname, des = data
 
         # label
-        if gender == 'male':
+        if gender == 'man':
             gender_tensor = torch.tensor(1)
-        elif gender == 'female':
+        elif gender == 'woman':
             gender_tensor = torch.tensor(0)
         else:
             raise ValueError("unknown gender value {}".format(gender))
