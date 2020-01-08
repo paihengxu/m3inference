@@ -38,7 +38,7 @@ with gzip.open(src, 'r') as inf:
             tmp['description'] = user['description']
         else:
             tmp['description'] = ''
-        tmp['lang'] = user['lang']
+        tmp['lang'] = get_lang(tmp['description'])
         tmp['gender'] = user['label'][0]
         # ignore users with multiple labels
         if len(user['label']) != 1:
