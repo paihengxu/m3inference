@@ -6,10 +6,13 @@ import json
 from m3inference.dataset import *
 
 # 10 in the paper
-device = 'cpu'
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+print("using", device)
 num_epoch = 5
 m3text = M3InferenceTextModel()
-data_or_datapath = "test/train_data.jsonl"
+m3text.to(device)
+# TODO: change the dataset
+data_or_datapath = "test/test_data.jsonl"
 
 data = []
 with open(data_or_datapath) as f:
@@ -22,25 +25,25 @@ dataloader = DataLoader(M3InferenceDataset(data, use_img=False), 16,
 criterion = nn.CrossEntropyLoss()
 # learning rate 0.001 for ground-up model, 0.0005 for fine-tuning model
 optimizer = torch.optim.Adam(m3text.parameters(), lr=0.001, amsgrad=True)
-y_pred = []
+# y_pred = []
 for epoch in range(num_epoch):
     epoch_loss = 0
     acc_num = 0
     num = 0
-    for batch in tqdm(dataloader, desc='Training...'):
+    # for batch in tqdm(dataloader, desc='Training...'):
+    for batch in dataloader:
         # print(batch)
-        # batch = [i.to(device) for i in batch]
-        data = batch['data']
+        data = [i.to(device) for i in batch['data']]
         # extract the label from batch
         # label = [i.to(device) for i in batch['label']]
-        label = batch['label']
+        label = batch['label'].to(device)
         # pred = self.model(batch)
         output = m3text.forward(data, 'gender')
         # print(output)
         pred = torch.argmax(output, dim=1)
         # print("pred", pred)
         # print("label", label)
-        acc = sum((pred==label).detach().numpy())
+        acc = sum((pred==label).cpu().detach().numpy())
         # print(acc)
         acc_num += acc
         num += len(label)
@@ -49,6 +52,6 @@ for epoch in range(num_epoch):
         epoch_loss += loss.item()
         loss.backward()
         optimizer.step()
-    print(acc_num/num)
+    print("epoch: {}, loss: {}, acc: {}, num :{}".format(epoch+1, epoch_loss, acc_num/num, num))
 
-m3text.save_state_dict('test_training.pt')
+torch.save(m3text.state_dict(), 'text_test.mdl')
